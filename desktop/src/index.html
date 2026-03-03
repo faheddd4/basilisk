@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Basilisk — AI Red Teaming</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ── TITLEBAR ── -->
+    <div class="titlebar">
+        <div class="tb-left">
+            <img src="assets/logo.jpg" alt="" width="18" height="18">
+            <span>BASILISK</span>
+        </div>
+        <div class="tb-controls">
+            <button class="tb-btn" id="btn-min"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+                    stroke="currentColor" stroke-width="1.5">
+                    <line x1="1" y1="5" x2="9" y2="5" />
+                </svg></button>
+            <button class="tb-btn" id="btn-max"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+                    stroke="currentColor" stroke-width="1.5">
+                    <rect x="1" y="1" width="8" height="8" />
+                </svg></button>
+            <button class="tb-btn close" id="btn-close"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+                    stroke="currentColor" stroke-width="1.5">
+                    <line x1="1" y1="1" x2="9" y2="9" />
+                    <line x1="9" y1="1" x2="1" y2="9" />
+                </svg></button>
+        </div>
+    </div>
+
+    <!-- ── SHELL ── -->
+    <div class="shell">
+
+        <!-- ── TOP NAV TABS ── -->
+        <nav class="topnav">
+            <button class="tab active" data-v="dashboard">Dashboard</button>
+            <button class="tab" data-v="scan">New Scan</button>
+            <button class="tab" data-v="sessions">Sessions<span class="badge hidden" id="b-sessions">0</span></button>
+            <button class="tab" data-v="modules">Modules</button>
+            <button class="tab" data-v="evolution">Evolution</button>
+            <button class="tab" data-v="recon">Recon</button>
+            <button class="tab" data-v="findings">Findings<span class="badge hidden" id="b-findings">0</span></button>
+            <button class="tab" data-v="reports">Reports</button>
+            <button class="tab" data-v="settings">Settings</button>
+            <button class="tab" data-v="log">Log<span class="dot-live hidden" id="scan-dot"></span></button>
+            <div class="nav-spacer"></div>
+            <span class="timer" id="scan-timer">00:00</span>
+            <div class="nav-status">
+                <span class="dot" id="conn-dot"></span>
+                <span id="conn-label">Offline</span>
+            </div>
+        </nav>
+
+        <!-- ── WORKSPACE ── -->
+        <div class="workspace">
+
+            <!-- DASHBOARD -->
+            <div id="v-dashboard" class="view active">
+                <div class="kpi-row">
+                    <div class="kpi">
+                        <div class="kpi-label">Findings</div>
+                        <div class="kpi-value danger" id="k-findings">0</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="kpi-label">Scans</div>
+                        <div class="kpi-value" id="k-scans">0</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="kpi-label">Modules</div>
+                        <div class="kpi-value info" id="k-modules">29</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="kpi-label">Posture</div>
+                        <div class="kpi-value safe" id="k-posture">—</div>
+                    </div>
+                </div>
+                <div class="sev-row">
+                    <div class="sev-chip"><span class="sev-dot crit"></span><span
+                            class="sev-chip-label">Critical</span><span class="sev-chip-count" id="sc-crit">0</span>
+                    </div>
+                    <div class="sev-chip"><span class="sev-dot high"></span><span
+                            class="sev-chip-label">High</span><span class="sev-chip-count" id="sc-high">0</span></div>
+                    <div class="sev-chip"><span class="sev-dot med"></span><span
+                            class="sev-chip-label">Medium</span><span class="sev-chip-count" id="sc-med">0</span></div>
+                    <div class="sev-chip"><span class="sev-dot low"></span><span class="sev-chip-label">Low</span><span
+                            class="sev-chip-count" id="sc-low">0</span></div>
+                </div>
+                <div class="dual">
+                    <div class="pane">
+                        <div class="pane-head">
+                            <span class="pane-title">Recent Findings</span>
+                            <div class="filters">
+                                <button class="fbtn on" data-sev="all">All</button>
+                                <button class="fbtn" data-sev="CRITICAL">Crit</button>
+                                <button class="fbtn" data-sev="HIGH">High</button>
+                                <button class="fbtn" data-sev="MEDIUM">Med</button>
+                                <button class="fbtn" data-sev="LOW">Low</button>
+                            </div>
+                        </div>
+                        <div class="pane-body" id="dash-findings">
+                            <div class="empty-msg">No findings yet — start a scan.</div>
+                        </div>
+                    </div>
+                    <div class="pane">
+                        <div class="pane-head"><span class="pane-title">Engine Telemetry</span></div>
+                        <div class="pane-body terminal" id="sys-log">
+                            <div class="ll dim">[boot] Basilisk AI Red Teaming v0.1.0</div>
+                            <div class="ll dim">[boot] Checking native extensions…</div>
+                            <div class="ll inf">[init] Waiting for backend connection.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW SCAN -->
+            <div id="v-scan" class="view">
+                <div class="cfg-grid">
+                    <div class="cfg-card">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="2" y1="12" x2="22" y2="12" />
+                                <path
+                                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>Target</h3>
+                        <div class="field"><label class="field-label">Endpoint URL</label><input class="inp"
+                                id="s-target" placeholder="https://api.target.com/v1/chat" autocomplete="off"></div>
+                        <div class="field-row">
+                            <div class="field"><label class="field-label">Provider</label><select class="sel"
+                                    id="s-provider">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="google">Google AI</option>
+                                    <option value="azure">Azure OpenAI</option>
+                                    <option value="ollama">Ollama (Local)</option>
+                                    <option value="custom">Custom HTTP</option>
+                                </select></div>
+                            <div class="field"><label class="field-label">Model</label><input class="inp" id="s-model"
+                                    placeholder="gpt-4o"></div>
+                        </div>
+                        <div class="field"><label class="field-label">API Key</label><input class="inp" id="s-apikey"
+                                type="password" placeholder="sk-…" autocomplete="off"></div>
+                    </div>
+                    <div class="cfg-card">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                            </svg>Parameters</h3>
+                        <div class="field-row">
+                            <div class="field"><label class="field-label">Scan Mode</label><select class="sel"
+                                    id="s-mode">
+                                    <option value="quick">Quick</option>
+                                    <option value="standard" selected>Standard</option>
+                                    <option value="deep">Deep</option>
+                                    <option value="stealth">Stealth</option>
+                                    <option value="chaos">Chaos</option>
+                                </select></div>
+                            <div class="field"><label class="field-label">Generations</label><input class="inp"
+                                    id="s-gens" type="number" value="5" min="1" max="50"></div>
+                        </div>
+                        <div class="field"><label class="field-label">Output</label><select class="sel" id="s-format">
+                                <option value="html">HTML Report</option>
+                                <option value="json">JSON</option>
+                                <option value="sarif">SARIF 2.1.0</option>
+                                <option value="markdown">Markdown</option>
+                            </select></div>
+                        <div style="display:flex;gap:8px;margin-top:10px;">
+                            <button class="btn primary block" id="btn-scan-start"><svg width="13" height="13"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                </svg>Start Scan</button>
+                            <button class="btn ghost block" id="btn-scan-stop" style="display:none"><svg width="13"
+                                    height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="6" y="4" width="4" height="16" />
+                                    <rect x="14" y="4" width="4" height="16" />
+                                </svg>Stop</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="pane" id="scan-progress-pane" style="display:none">
+                    <div class="pane-head"><span class="pane-title">Scan Progress</span><span class="mode-pill standard"
+                            id="scan-mode-pill">STANDARD</span></div>
+                    <div style="padding:10px 16px">
+                        <div class="progress-track">
+                            <div class="progress-fill" id="scan-bar"></div>
+                        </div>
+                        <div class="progress-label" id="scan-phase">Initializing…</div>
+                    </div>
+                </div>
+                <div class="pane mt-3" style="flex:1">
+                    <div class="pane-head"><span class="pane-title">Live Findings</span><span
+                            style="font-size:10px;color:var(--text-3)" id="live-count">0 detected</span></div>
+                    <div class="pane-body" id="live-findings">
+                        <div class="empty-msg">Findings appear here during scan.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SESSIONS -->
+            <div id="v-sessions" class="view">
+                <div class="dual full">
+                    <div class="pane" style="max-width:320px">
+                        <div class="pane-head"><span class="pane-title">History</span><button class="btn ghost sm"
+                                id="btn-refresh-sess">Refresh</button></div>
+                        <div class="pane-body no-pad" id="sess-list">
+                            <div class="empty-msg">No sessions yet.</div>
+                        </div>
+                    </div>
+                    <div class="pane">
+                        <div class="pane-head"><span class="pane-title">Details</span>
+                            <div style="display:flex;gap:4px"><button class="btn ghost sm"
+                                    id="btn-exp-html">HTML</button><button class="btn ghost sm"
+                                    id="btn-exp-json">JSON</button><button class="btn ghost sm"
+                                    id="btn-exp-sarif">SARIF</button></div>
+                        </div>
+                        <div class="pane-body no-pad" id="sess-detail">
+                            <div class="empty-msg">Select a session.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODULES -->
+            <div id="v-modules" class="view">
+                <div class="pane full">
+                    <div class="pane-head"><span class="pane-title">Attack Module Registry — 29 modules</span><input
+                            class="inp" id="mod-search" placeholder="Search…"
+                            style="width:180px;padding:4px 10px;font-size:11px"></div>
+                    <div class="pane-body" id="mod-body">
+                        <div class="mod-grid" id="mod-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EVOLUTION -->
+            <div id="v-evolution" class="view">
+                <div class="dual full">
+                    <div class="pane">
+                        <div class="pane-head"><span class="pane-title">SPE-NL Genetic Algorithm</span></div>
+                        <div class="pane-body">
+                            <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+                                <div class="kpi">
+                                    <div class="kpi-label">Population</div>
+                                    <div class="kpi-value" id="evo-pop">—</div>
+                                </div>
+                                <div class="kpi">
+                                    <div class="kpi-label">Generation</div>
+                                    <div class="kpi-value" id="evo-gen">—</div>
+                                </div>
+                                <div class="kpi">
+                                    <div class="kpi-label">Best Fitness</div>
+                                    <div class="kpi-value" id="evo-fit">—</div>
+                                </div>
+                            </div>
+                            <div class="empty-msg mt-4">Evolution data appears after scans with evolution enabled.</div>
+                        </div>
+                    </div>
+                    <div class="pane">
+                        <div class="pane-head"><span class="pane-title">Mutation Operators (Go Native)</span></div>
+                        <div class="pane-body">
+                            <div class="mod-grid" id="mut-grid"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RECON -->
+            <div id="v-recon" class="view">
+                <div class="pane full">
+                    <div class="pane-head"><span class="pane-title">Target Reconnaissance Profile</span></div>
+                    <div class="pane-body">
+                        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+                            <div class="kpi">
+                                <div class="kpi-label">Model Family</div>
+                                <div class="kpi-value" id="r-model">—</div>
+                            </div>
+                            <div class="kpi">
+                                <div class="kpi-label">Creator</div>
+                                <div class="kpi-value" id="r-creator">—</div>
+                            </div>
+                            <div class="kpi">
+                                <div class="kpi-label">Context Window</div>
+                                <div class="kpi-value" id="r-ctx">—</div>
+                            </div>
+                        </div>
+                        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+                            <div class="kpi">
+                                <div class="kpi-label">Guardrails</div>
+                                <div class="kpi-value" id="r-guard">—</div>
+                            </div>
+                            <div class="kpi">
+                                <div class="kpi-label">Tools</div>
+                                <div class="kpi-value" id="r-tools">—</div>
+                            </div>
+                            <div class="kpi">
+                                <div class="kpi-label">RAG Detected</div>
+                                <div class="kpi-value" id="r-rag">—</div>
+                            </div>
+                        </div>
+                        <div class="empty-msg mt-4">Run a scan to populate recon data.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FINDINGS -->
+            <div id="v-findings" class="view">
+                <div class="pane full">
+                    <div class="pane-head">
+                        <span class="pane-title">All Findings</span>
+                        <div class="filters" id="find-filters">
+                            <button class="fbtn on" data-sev="all">All</button>
+                            <button class="fbtn" data-sev="CRITICAL">Critical</button>
+                            <button class="fbtn" data-sev="HIGH">High</button>
+                            <button class="fbtn" data-sev="MEDIUM">Medium</button>
+                            <button class="fbtn" data-sev="LOW">Low</button>
+                        </div>
+                    </div>
+                    <div class="pane-body no-pad">
+                        <table class="tbl">
+                            <thead>
+                                <tr>
+                                    <th>Severity</th>
+                                    <th>OWASP</th>
+                                    <th>Module</th>
+                                    <th>Title</th>
+                                    <th>Conf</th>
+                                </tr>
+                            </thead>
+                            <tbody id="find-tbody">
+                                <tr>
+                                    <td colspan="5" style="text-align:center;color:var(--text-3);padding:24px">No
+                                        findings.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORTS -->
+            <div id="v-reports" class="view">
+                <div class="cfg-grid">
+                    <div class="cfg-card">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>Generate</h3>
+                        <div class="field"><label class="field-label">Session</label><select class="sel" id="rpt-sess">
+                                <option value="">Select…</option>
+                            </select></div>
+                        <div class="field"><label class="field-label">Format</label><select class="sel" id="rpt-fmt">
+                                <option value="html">HTML</option>
+                                <option value="json">JSON</option>
+                                <option value="sarif">SARIF</option>
+                                <option value="markdown">Markdown</option>
+                            </select></div>
+                        <button class="btn primary block" id="btn-gen-report">Generate &amp; Export</button>
+                    </div>
+                    <div class="cfg-card">
+                        <h3>Formats</h3>
+                        <div style="font-size:12px;color:var(--text-2);line-height:2">
+                            <div><span class="badge-sev HIGH">HTML</span> Full visual report with charts</div>
+                            <div><span class="badge-sev LOW">JSON</span> Structured data for automation</div>
+                            <div><span class="badge-sev MEDIUM">SARIF</span> GitHub/GitLab security tabs</div>
+                            <div><span class="badge-sev INFO">MD</span> Markdown for documentation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div id="v-settings" class="view">
+                <div class="settings-wrap">
+                    <div class="settings-section">
+                        <h3>API Keys</h3>
+                        <div class="apikey-row">
+                            <div class="field"><label class="field-label">OpenAI</label><input class="inp"
+                                    id="key-openai" type="password" placeholder="sk-…"></div><button
+                                class="btn ghost sm" onclick="saveKey('openai')">Save</button>
+                        </div>
+                        <div class="apikey-row">
+                            <div class="field"><label class="field-label">Anthropic</label><input class="inp"
+                                    id="key-anthropic" type="password" placeholder="sk-ant-…"></div><button
+                                class="btn ghost sm" onclick="saveKey('anthropic')">Save</button>
+                        </div>
+                        <div class="apikey-row">
+                            <div class="field"><label class="field-label">Google AI</label><input class="inp"
+                                    id="key-google" type="password" placeholder="AIza…"></div><button
+                                class="btn ghost sm" onclick="saveKey('google')">Save</button>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Native Extensions</h3>
+                        <div class="native-grid">
+                            <div class="native-card">
+                                <div class="native-label">Fuzzer (Go)</div>
+                                <div class="native-val fb" id="ns-fuzzer">…</div>
+                            </div>
+                            <div class="native-card">
+                                <div class="native-label">Matcher (Go)</div>
+                                <div class="native-val fb" id="ns-matcher">…</div>
+                            </div>
+                            <div class="native-card">
+                                <div class="native-label">Tokens (C)</div>
+                                <div class="native-val fb" id="ns-tokens">…</div>
+                            </div>
+                            <div class="native-card">
+                                <div class="native-label">Encoder (C)</div>
+                                <div class="native-val fb" id="ns-encoder">…</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOG -->
+            <div id="v-log" class="view">
+                <div class="pane full">
+                    <div class="pane-head"><span class="pane-title">Full System Log</span><button class="btn ghost sm"
+                            id="btn-clear-log">Clear</button></div>
+                    <div class="pane-body terminal" id="full-log">
+                        <div class="ll dim">[system] Basilisk v0.1.0</div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /workspace -->
+
+        <!-- FOOTER -->
+        <div class="app-footer">
+            <span>Basilisk v0.1.0 — AI Red Teaming Framework</span>
+            <span>Built by <a href="https://regaan.rothackers.com" target="_blank">Regaan</a> · Rot Hackers</span>
+        </div>
+
+    </div><!-- /shell -->
+
+    <script src="renderer.js"></script>
+</body>
+
+</html>

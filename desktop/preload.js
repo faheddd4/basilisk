@@ -1,0 +1,63 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('basilisk', {
+    // IPC: renderer → main
+    send: (channel, ...args) => {
+        const allowed = ['window:minimize', 'window:maximize', 'window:close'];
+        if (allowed.includes(channel)) ipcRenderer.send(channel, ...args);
+    },
+    invoke: (channel, ...args) => {
+        const allowed = ['dialog:exportReport', 'dialog:saveFile'];
+        if (allowed.includes(channel)) return ipcRenderer.invoke(channel, ...args);
+        return Promise.reject(new Error(`IPC channel not allowed: ${channel}`));
+    },
+
+    // IPC: main → renderer
+    onBackendLog: (cb) => ipcRenderer.on('backend-log', (_, msg) => cb(msg)),
+    onBackendError: (cb) => ipcRenderer.on('backend-error', (_, msg) => cb(msg)),
+
+    // Report export shortcut
+    report: {
+        export: async (sessionId, format) => {
+            try {
+                const resp = await fetch(`http://127.0.0.1:8741/api/report/${sessionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ format }),
+                });
+                const data = await resp.json();
+                if (data.content) {
+                    const ext = format === 'html' ? 'html' : format === 'sarif' ? 'sarif' : format === 'markdown' ? 'md' : 'json';
+                    const result = await ipcRenderer.invoke('dialog:saveFile', {
+                        content: typeof data.content === 'string' ? data.content : JSON.stringify(data.content, null, 2),
+                        defaultName: `basilisk_report_${Date.now()}.${ext}`,
+                        filters: [{ name: `${format.toUpperCase()} Report`, extensions: [ext] }],
+                    });
+                    return result;
+                }
+                return { success: false, error: data.error || 'No content' };
+            } catch (e) {
+                return { success: false, error: e.message };
+            }
+        },
+    },
+
+    // API key management via electron-store (if available)
+    apiKeys: {
+        set: async (provider, key) => {
+            try {
+                await fetch(`http://127.0.0.1:8741/api/settings/apikey`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider, key }),
+                });
+            } catch (e) { /* best effort */ }
+        },
+    },
+});
+
+// Also expose as window.api for compatibility
+contextBridge.exposeInMainWorld('api', {
+    send: (channel, ...args) => ipcRenderer.send(channel, ...args),
+    invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+});

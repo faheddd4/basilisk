@@ -1,0 +1,73 @@
+{
+    "name": "basilisk-desktop",
+    "version": "0.1.0",
+    "description": "Basilisk — AI Red Teaming Desktop Application",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron .",
+        "build": "electron-builder",
+        "build:linux": "electron-builder --linux",
+        "build:win": "electron-builder --win",
+        "build:mac": "electron-builder --mac",
+        "pack": "electron-builder --dir"
+    },
+    "build": {
+        "appId": "com.rothackers.basilisk",
+        "productName": "Basilisk",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "main.js",
+            "preload.js",
+            "src/**/*"
+        ],
+        "linux": {
+            "target": [
+                "AppImage",
+                "deb",
+                "rpm"
+            ],
+            "category": "Development",
+            "icon": "build/icon.png"
+        },
+        "win": {
+            "target": [
+                "nsis",
+                "portable"
+            ],
+            "icon": "build/icon.ico"
+        },
+        "mac": {
+            "target": [
+                "dmg"
+            ],
+            "icon": "build/icon.icns"
+        },
+        "extraResources": [
+            {
+                "from": "../basilisk",
+                "to": "basilisk",
+                "filter": [
+                    "**/*.py",
+                    "**/*.yaml",
+                    "**/*.yml"
+                ]
+            }
+        ]
+    },
+    "dependencies": {
+        "electron-store": "^8.1.0"
+    },
+    "devDependencies": {
+        "electron": "^28.0.0",
+        "electron-builder": "^24.9.1"
+    },
+    "author": "Rot Hackers <team@rothackers.xyz>",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/rothackers/basilisk"
+    }
+}

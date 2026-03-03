@@ -1,0 +1,83 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "basilisk-ai"
+version = "1.0.0"
+description = "LLM/AI Application Red Teaming Framework — Break Every Mind"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Regaan", email = "support@rothackers.com"},
+]
+keywords = [
+    "security", "ai", "llm", "red-team", "penetration-testing",
+    "prompt-injection", "offensive-security", "vulnerability-scanner",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "httpx>=0.27.0",
+    "litellm>=1.40.0",
+    "pyyaml>=6.0",
+    "aiosqlite>=0.20.0",
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.0",
+    "websockets>=12.0",
+    "jinja2>=3.1.0",
+    "pydantic>=2.7.0",
+    "numpy>=1.26.0",
+    "scikit-learn>=1.5.0",
+    "tiktoken>=0.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23.0",
+    "hypothesis>=6.100.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+]
+pdf = [
+    "weasyprint>=62.0",
+]
+
+[project.urls]
+Homepage = "https://basilisk.rothackers.com"
+Documentation = "https://basilisk.rothackers.com/docs"
+Repository = "https://github.com/noobforanonymous/basilisk"
+Issues = "https://github.com/noobforanonymous/basilisk/issues"
+
+[project.scripts]
+basilisk = "basilisk.cli.main:cli"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
