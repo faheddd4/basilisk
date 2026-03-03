@@ -55,7 +55,7 @@ async function apiFetch(path, opts = {}) {
         const r = await fetch(`${BRIDGE}${path}`, { headers: { 'Content-Type': 'application/json' }, ...opts });
         return await r.json();
     } catch (e) {
-        log('err', `API: ${e.message}`);
+        if (backendReady) log('err', `API: ${e.message}`);
         return { error: e.message };
     }
 }
@@ -63,21 +63,28 @@ async function apiFetch(path, opts = {}) {
 // ── Backend Connection ──
 const connDot = document.getElementById('conn-dot');
 const connLabel = document.getElementById('conn-label');
+let backendReady = false;
 
-async function checkBackend() {
+async function checkBackend(silent = false) {
     try {
         const r = await fetch(`${BRIDGE}/health`);
         if (r.ok) {
             connDot.classList.add('on');
             connDot.classList.remove('err');
             connLabel.innerText = 'Connected';
-            log('ok', 'Backend connected.');
+            if (!backendReady) {
+                log('ok', 'Backend connected.');
+                backendReady = true;
+            }
             return true;
         }
-    } catch { }
-    connDot.classList.remove('on');
-    connDot.classList.add('err');
-    connLabel.innerText = 'Offline';
+    } catch {
+        if (!silent) {
+            connDot.classList.remove('on');
+            connDot.classList.add('err');
+            connLabel.innerText = 'Offline';
+        }
+    }
     return false;
 }
 
@@ -88,8 +95,8 @@ let poll = setInterval(async () => {
         loadModules();
         connectWebSocket();
     }
-}, 2000);
-checkBackend();
+}, 500);
+checkBackend(true); // silent first attempt — backend is still starting
 
 // ── WebSocket for real-time scan events ──
 let ws = null;

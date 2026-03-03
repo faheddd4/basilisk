@@ -3,6 +3,11 @@ const path = require('path');
 const { spawn, execSync } = require('child_process');
 const fs = require('fs');
 
+// Fix GPU crashes on Wayland/Intel (prevents 30s startup delay)
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+
 let mainWindow;
 let pythonProcess;
 
@@ -10,15 +15,21 @@ function createWindow() {
     // Remove the native menu bar completely
     Menu.setApplicationMenu(null);
 
+    // Resolve icon path: build/icon.png > src/assets/logo.jpg
+    const iconPng = path.join(__dirname, 'build', 'icon.png');
+    const iconJpg = path.join(__dirname, 'src', 'assets', 'logo.jpg');
+    const iconPath = fs.existsSync(iconPng) ? iconPng : iconJpg;
+
     mainWindow = new BrowserWindow({
         width: 1400,
         height: 900,
         minWidth: 1024,
         minHeight: 700,
-        icon: path.join(__dirname, 'src', 'assets', 'logo.jpg'),
+        icon: iconPath,
         frame: false,
         autoHideMenuBar: true,
         backgroundColor: '#09090b',
+        show: false, // Don't show until ready
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -27,6 +38,11 @@ function createWindow() {
     });
 
     mainWindow.loadFile('src/index.html');
+
+    // Show window as soon as the page is ready (don't wait for backend)
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
+    });
 }
 
 // Start FastAPI backend sidecar
