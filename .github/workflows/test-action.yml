@@ -11,6 +11,9 @@ on:
 jobs:
   test-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
 
@@ -22,10 +25,3 @@ jobs:
           mode: quick
           fail-on: critical
           output: sarif
-
-      - name: Upload SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: ./basilisk-reports/
-        continue-on-error: true
