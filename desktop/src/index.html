@@ -47,7 +47,10 @@
             <button class="tab" data-v="evolution">Evolution</button>
             <button class="tab" data-v="recon">Recon</button>
             <button class="tab" data-v="findings">Findings<span class="badge hidden" id="b-findings">0</span></button>
+            <button class="tab" data-v="diff">Diff</button>
+            <button class="tab" data-v="posture">Posture</button>
             <button class="tab" data-v="reports">Reports</button>
+            <button class="tab" data-v="audit">Audit</button>
             <button class="tab" data-v="settings">Settings</button>
             <button class="tab" data-v="log">Log<span class="dot-live hidden" id="scan-dot"></span></button>
             <div class="nav-spacer"></div>
@@ -111,7 +114,7 @@
                     <div class="pane">
                         <div class="pane-head"><span class="pane-title">Engine Telemetry</span></div>
                         <div class="pane-body terminal" id="sys-log">
-                            <div class="ll dim">[boot] Basilisk AI Red Teaming v0.1.0</div>
+                            <div class="ll dim">[boot] Basilisk AI Red Teaming v1.0.0</div>
                             <div class="ll dim">[boot] Checking native extensions…</div>
                             <div class="ll inf">[init] Waiting for backend connection.</div>
                         </div>
@@ -139,6 +142,7 @@
                                     <option value="anthropic">Anthropic</option>
                                     <option value="google">Google AI</option>
                                     <option value="azure">Azure OpenAI</option>
+                                    <option value="github">GitHub Models (Free)</option>
                                     <option value="ollama">Ollama (Local)</option>
                                     <option value="custom">Custom HTTP</option>
                                 </select></div>
@@ -344,6 +348,105 @@
                 </div>
             </div>
 
+            <!-- DIFFERENTIAL -->
+            <div id="v-diff" class="view">
+                <div class="cfg-grid">
+                    <div class="cfg-card" style="grid-column:1/-1">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="18" cy="18" r="3" />
+                                <circle cx="6" cy="6" r="3" />
+                                <path d="M13 6h3a2 2 0 012 2v7" />
+                                <path d="M11 18H8a2 2 0 01-2-2V9" />
+                            </svg>Differential Scan — Compare Models Side-by-Side</h3>
+                        <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">Run identical attack probes
+                            across multiple LLM providers. Detects behavioral divergences where some models refuse but
+                            others comply.</div>
+                        <div id="diff-targets">
+                            <div class="diff-target-row" data-idx="0">
+                                <select class="sel" id="diff-prov-0" style="width:130px">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="google">Google</option>
+                                    <option value="azure">Azure</option>
+                                    <option value="ollama">Ollama</option>
+                                    <option value="github">GitHub</option>
+                                </select>
+                                <input class="inp" id="diff-model-0" placeholder="gpt-4o" style="flex:1">
+                            </div>
+                            <div class="diff-target-row" data-idx="1">
+                                <select class="sel" id="diff-prov-1" style="width:130px">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic" selected>Anthropic</option>
+                                    <option value="google">Google</option>
+                                    <option value="azure">Azure</option>
+                                    <option value="ollama">Ollama</option>
+                                    <option value="github">GitHub</option>
+                                </select>
+                                <input class="inp" id="diff-model-1" placeholder="claude-3-5-sonnet-20241022"
+                                    style="flex:1">
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:10px">
+                            <button class="btn ghost sm" id="btn-diff-add">+ Add Model</button>
+                            <button class="btn primary" id="btn-diff-start"><svg width="13" height="13"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                </svg>Run Differential</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="pane mt-3" style="flex:1">
+                    <div class="pane-head"><span class="pane-title">Divergence Results</span><span
+                            style="font-size:10px;color:var(--text-3)" id="diff-summary"></span></div>
+                    <div class="pane-body no-pad" id="diff-results">
+                        <div class="empty-msg">Configure targets above and run a differential scan.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POSTURE -->
+            <div id="v-posture" class="view">
+                <div class="cfg-grid">
+                    <div class="cfg-card">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            </svg>Guardrail Posture Scan</h3>
+                        <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">Non-destructive recon scan.
+                            No exploitation — safe for production. Produces an A+ to F security grade.</div>
+                        <div class="field-row">
+                            <div class="field"><label class="field-label">Provider</label><select class="sel"
+                                    id="post-provider">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="google">Google</option>
+                                    <option value="azure">Azure</option>
+                                    <option value="ollama">Ollama</option>
+                                </select></div>
+                            <div class="field"><label class="field-label">Model</label><input class="inp"
+                                    id="post-model" placeholder="gpt-4o"></div>
+                        </div>
+                        <button class="btn primary block" id="btn-posture-start" style="margin-top:10px"><svg width="13"
+                                height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            </svg>Run Posture Scan</button>
+                    </div>
+                    <div class="cfg-card" style="text-align:center">
+                        <h3>Security Grade</h3>
+                        <div id="posture-grade"
+                            style="font-size:72px;font-weight:700;color:var(--text-3);line-height:1">—</div>
+                        <div id="posture-score" style="font-size:14px;color:var(--text-3);margin-top:8px"></div>
+                    </div>
+                </div>
+                <div class="pane mt-3" style="flex:1">
+                    <div class="pane-head"><span class="pane-title">Category Breakdown</span></div>
+                    <div class="pane-body no-pad" id="posture-results">
+                        <div class="empty-msg">Run a posture scan to see guardrail coverage.</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- REPORTS -->
             <div id="v-reports" class="view">
                 <div class="cfg-grid">
@@ -396,6 +499,12 @@
                                     id="key-google" type="password" placeholder="AIza…"></div><button
                                 class="btn ghost sm" onclick="saveKey('google')">Save</button>
                         </div>
+                        <div class="apikey-row">
+                            <div class="field"><label class="field-label">GitHub Token</label><input class="inp"
+                                    id="key-github" type="password"
+                                    placeholder="ghp_… (free via github.com/marketplace/models)"></div><button
+                                class="btn ghost sm" onclick="saveKey('github')">Save</button>
+                        </div>
                     </div>
                     <div class="settings-section">
                         <h3>Native Extensions</h3>
@@ -427,7 +536,27 @@
                     <div class="pane-head"><span class="pane-title">Full System Log</span><button class="btn ghost sm"
                             id="btn-clear-log">Clear</button></div>
                     <div class="pane-body terminal" id="full-log">
-                        <div class="ll dim">[system] Basilisk v0.1.0</div>
+                        <div class="ll dim">[system] Basilisk v1.0.0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUDIT -->
+            <div id="v-audit" class="view">
+                <div class="pane full">
+                    <div class="pane-head">
+                        <span class="pane-title">Audit Trail</span>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <input class="inp" id="audit-session" placeholder="Session ID"
+                                style="width:160px;padding:4px 10px;font-size:11px">
+                            <button class="btn ghost sm" id="btn-audit-load">Load</button>
+                        </div>
+                    </div>
+                    <div class="pane-body terminal" id="audit-log">
+                        <div class="empty-msg">Enter a session ID to view its audit trail.</div>
+                    </div>
+                    <div style="padding:8px 16px;font-size:10px;color:var(--text-3);border-top:1px solid var(--border)">
+                        <span id="audit-integrity"></span>
                     </div>
                 </div>
             </div>
@@ -436,7 +565,7 @@
 
         <!-- FOOTER -->
         <div class="app-footer">
-            <span>Basilisk v0.1.0 — AI Red Teaming Framework</span>
+            <span>Basilisk v1.0.0 — AI Red Teaming Framework</span>
             <span>Built by <a href="https://regaan.rothackers.com" target="_blank">Regaan</a> · Rot Hackers</span>
         </div>
 

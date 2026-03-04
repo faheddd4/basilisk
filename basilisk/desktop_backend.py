@@ -32,7 +32,7 @@ from basilisk.core.finding import Severity
 
 app = FastAPI(
     title="Basilisk Desktop Backend",
-    version="0.1.0",
+    version="1.0.0",
     docs_url="/docs" if os.environ.get("BASILISK_DEBUG") else None,
 )
 
@@ -82,7 +82,7 @@ class ReportRequest(BaseModel):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.1.0", "timestamp": datetime.now(timezone.utc).isoformat()}
+    return {"status": "ok", "version": "1.0.0", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
 @app.get("/api/native/status")
@@ -276,6 +276,7 @@ async def save_api_key(req: ApiKeyRequest):
         "anthropic": "ANTHROPIC_API_KEY",
         "google": "GOOGLE_API_KEY",
         "azure": "AZURE_API_KEY",
+        "github": "GH_MODELS_TOKEN",
     }
     env_var = env_map.get(req.provider)
     if env_var:
@@ -386,6 +387,129 @@ async def _run_scan_background(session: ScanSession, cfg: BasiliskConfig):
         logger.error(f"Scan {sid} failed: {e}")
         active_scans[sid]["status"] = "error"
         await broadcast("scan:error", {"session_id": sid, "error": str(e)})
+
+
+# ============================================================
+# Differential Scan
+# ============================================================
+
+class DiffConfig(BaseModel):
+    targets: list[dict[str, str]]   # [{"provider": "openai", "model": "gpt-4", "api_key": "..."}]
+    categories: list[str] = []
+
+@app.post("/api/diff")
+async def start_diff_scan(config: DiffConfig):
+    """Run a differential scan across multiple models."""
+    try:
+        if len(config.targets) < 2:
+            raise HTTPException(400, {"error": "Need at least 2 targets for differential scan"})
+
+        from basilisk.differential import run_differential
+        report = await run_differential(
+            config.targets,
+            categories=config.categories or None,
+            verbose=False,
+        )
+        return report.to_dict()
+    except Exception as e:
+        raise HTTPException(500, {"error": str(e)})
+
+
+# ============================================================
+# Posture Scan
+# ============================================================
+
+class PostureConfig(BaseModel):
+    target: str = ""
+    provider: str = "openai"
+    model: str = ""
+    api_key: str = ""
+
+@app.post("/api/posture")
+async def start_posture_scan(config: PostureConfig):
+    """Run a guardrail posture scan (recon-only, no attacks)."""
+    try:
+        cfg = BasiliskConfig.from_cli_args(
+            target=config.target or "direct",
+            provider=config.provider,
+            model=config.model,
+            api_key=config.api_key,
+        )
+        from basilisk.cli.scan import _create_provider
+        from basilisk.posture import run_posture_scan, save_posture_report
+
+        prov = _create_provider(cfg)
+        report = await run_posture_scan(
+            prov, target=config.target,
+            provider_name=config.provider,
+            model_name=config.model,
+            verbose=False,
+        )
+
+        path = save_posture_report(report)
+        result = report.to_dict()
+        result["report_path"] = path
+        return result
+    except Exception as e:
+        raise HTTPException(500, {"error": str(e)})
+
+
+# ============================================================
+# Audit Logs
+# ============================================================
+
+@app.get("/api/audit/{session_id}")
+async def get_audit_log(session_id: str):
+    """Get audit log entries for a session."""
+    import glob
+    logs = glob.glob(f"./basilisk-reports/audit_{session_id}_*.jsonl")
+    if not logs:
+        raise HTTPException(404, {"error": "No audit log found for this session"})
+
+    entries = []
+    with open(logs[0]) as f:
+        for line in f:
+            try:
+                entries.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return {"path": logs[0], "entries": entries}
+
+
+# ============================================================
+# Providers
+# ============================================================
+
+@app.get("/api/providers")
+async def list_providers():
+    """List all supported LLM providers with their status."""
+    providers = [
+        {"id": "openai", "name": "OpenAI", "models": ["gpt-4", "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"], "env_var": "OPENAI_API_KEY"},
+        {"id": "anthropic", "name": "Anthropic", "models": ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-haiku-20240307"], "env_var": "ANTHROPIC_API_KEY"},
+        {"id": "google", "name": "Google", "models": ["gemini/gemini-2.0-flash", "gemini/gemini-1.5-pro"], "env_var": "GOOGLE_API_KEY"},
+        {"id": "azure", "name": "Azure OpenAI", "models": ["azure/gpt-4", "azure/gpt-35-turbo"], "env_var": "AZURE_API_KEY"},
+        {"id": "github", "name": "GitHub Models (Free)", "models": [
+            "gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1", "gpt-4.1-nano",
+            "o3-mini", "o4-mini", "gpt-5-nano", "gpt-5-mini",
+            "DeepSeek-R1", "DeepSeek-V3-0324",
+            "Meta-Llama-3.3-70B-Instruct", "Llama-4-Scout-17B-16E-Instruct",
+            "Mistral-Small-3.1", "Codestral-25.01",
+            "Phi-4", "Phi-4-mini-reasoning",
+            "Cohere-command-a", "Grok-3-Mini"
+        ], "env_var": "GH_MODELS_TOKEN"},
+        {"id": "ollama", "name": "Ollama (Local)", "models": ["ollama/llama3.1", "ollama/mistral", "ollama/codellama"], "env_var": ""},
+        {"id": "bedrock", "name": "AWS Bedrock", "models": ["bedrock/anthropic.claude-3-sonnet", "bedrock/meta.llama3"], "env_var": "AWS_ACCESS_KEY_ID"},
+        {"id": "custom", "name": "Custom HTTP", "models": [], "env_var": "BASILISK_API_KEY"},
+    ]
+
+    # Check which keys are configured
+    for p in providers:
+        if p["env_var"]:
+            p["configured"] = bool(os.environ.get(p["env_var"], ""))
+        else:
+            p["configured"] = True  # Ollama doesn't need a key
+
+    return {"providers": providers}
 
 
 # ============================================================

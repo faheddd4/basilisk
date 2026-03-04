@@ -1,0 +1,201 @@
+name: 'Basilisk AI Security Scan'
+description: 'Run Basilisk AI/LLM red teaming scans in your CI/CD pipeline. Detects prompt injection, guardrail bypasses, and OWASP LLM Top 10 vulnerabilities.'
+author: 'Regaan / Rot Hackers'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  target:
+    description: 'Target URL or API endpoint to scan'
+    required: true
+  provider:
+    description: 'LLM provider (openai, anthropic, google, azure, ollama, github, custom)'
+    required: false
+    default: 'openai'
+  model:
+    description: 'Model name override'
+    required: false
+    default: ''
+  api-key:
+    description: 'API key for the LLM provider (use GitHub Secrets)'
+    required: false
+    default: ''
+  mode:
+    description: 'Scan mode: quick, standard, deep, stealth, chaos'
+    required: false
+    default: 'quick'
+  fail-on:
+    description: 'Minimum severity to fail the pipeline: critical, high, medium, low, info'
+    required: false
+    default: 'high'
+  output:
+    description: 'Report format: html, json, sarif, markdown'
+    required: false
+    default: 'sarif'
+  modules:
+    description: 'Comma-separated list of attack modules to run (default: all)'
+    required: false
+    default: ''
+  evolve:
+    description: 'Enable genetic prompt evolution'
+    required: false
+    default: 'false'
+  generations:
+    description: 'Number of evolution generations'
+    required: false
+    default: '3'
+  posture-only:
+    description: 'Run guardrail posture scan only (no attacks)'
+    required: false
+    default: 'false'
+  baseline:
+    description: 'Path to baseline SARIF file for regression detection'
+    required: false
+    default: ''
+  anthropic-api-key:
+    description: 'Anthropic API key (alternative to api-key for multi-provider setups)'
+    required: false
+    default: ''
+  google-api-key:
+    description: 'Google API key (alternative to api-key for multi-provider setups)'
+    required: false
+    default: ''
+  github-token:
+    description: 'GitHub token for GitHub Models (free via github.com/marketplace/models)'
+    required: false
+    default: ''
+
+outputs:
+  exit-code:
+    description: 'Scan exit code (0 = pass, 1 = fail)'
+  findings-count:
+    description: 'Total number of findings'
+  critical-count:
+    description: 'Number of critical findings'
+  high-count:
+    description: 'Number of high findings'
+  report-path:
+    description: 'Path to the generated report'
+  posture-grade:
+    description: 'Guardrail posture grade (A+ through F), only for posture-only mode'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Basilisk
+      shell: bash
+      run: |
+        pip install --quiet basilisk-ai
+
+    - name: Run Posture Scan
+      if: inputs.posture-only == 'true'
+      shell: bash
+      env:
+        OPENAI_API_KEY: ${{ inputs.api-key }}
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key || inputs.api-key }}
+        GOOGLE_API_KEY: ${{ inputs.google-api-key || inputs.api-key }}
+        GH_MODELS_TOKEN: ${{ inputs.github-token }}
+        BASILISK_API_KEY: ${{ inputs.api-key }}
+      run: |
+        basilisk posture \
+          -t "${{ inputs.target }}" \
+          -p "${{ inputs.provider }}" \
+          --output-dir ./basilisk-reports \
+          --json
+
+    - name: Run Security Scan
+      if: inputs.posture-only != 'true'
+      shell: bash
+      env:
+        OPENAI_API_KEY: ${{ inputs.api-key }}
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key || inputs.api-key }}
+        GOOGLE_API_KEY: ${{ inputs.google-api-key || inputs.api-key }}
+        GH_MODELS_TOKEN: ${{ inputs.github-token }}
+        BASILISK_API_KEY: ${{ inputs.api-key }}
+      run: |
+        MODULES_FLAG=""
+        if [ -n "${{ inputs.modules }}" ]; then
+          IFS=',' read -ra MODS <<< "${{ inputs.modules }}"
+          for mod in "${MODS[@]}"; do
+            MODULES_FLAG="$MODULES_FLAG --module $mod"
+          done
+        fi
+
+        EVOLVE_FLAG="--no-evolve"
+        if [ "${{ inputs.evolve }}" == "true" ]; then
+          EVOLVE_FLAG="--evolve"
+        fi
+
+        basilisk scan \
+          -t "${{ inputs.target }}" \
+          -p "${{ inputs.provider }}" \
+          ${{ inputs.model && format('-m "{0}"', inputs.model) || '' }} \
+          --mode "${{ inputs.mode }}" \
+          --fail-on "${{ inputs.fail-on }}" \
+          -o "${{ inputs.output }}" \
+          --output-dir ./basilisk-reports \
+          --no-dashboard \
+          $EVOLVE_FLAG \
+          --generations ${{ inputs.generations }} \
+          $MODULES_FLAG
+
+    - name: Check Regression Against Baseline
+      if: inputs.baseline != '' && inputs.posture-only != 'true'
+      shell: bash
+      run: |
+        echo "Checking for regressions against baseline..."
+        REPORT=$(ls -t ./basilisk-reports/*.sarif 2>/dev/null | head -1)
+        if [ -n "$REPORT" ] && [ -f "${{ inputs.baseline }}" ]; then
+          python3 -c "
+        import json, sys
+
+        with open('${{ inputs.baseline }}') as f:
+            baseline = json.load(f)
+        with open('$REPORT') as f:
+            current = json.load(f)
+
+        baseline_ids = set()
+        for run in baseline.get('runs', []):
+            for result in run.get('results', []):
+                baseline_ids.add(result.get('ruleId', ''))
+
+        new_findings = []
+        for run in current.get('runs', []):
+            for result in run.get('results', []):
+                if result.get('ruleId', '') not in baseline_ids:
+                    new_findings.append(result)
+
+        if new_findings:
+            print(f'🔴 REGRESSION: {len(new_findings)} new finding(s) not in baseline!')
+            for f in new_findings:
+                level = f.get('level', 'warning')
+                rule = f.get('ruleId', 'unknown')
+                msg = f.get('message', {}).get('text', '')[:100]
+                print(f'  [{level}] {rule}: {msg}')
+            sys.exit(1)
+        else:
+            print('🟢 No regressions detected.')
+        "
+        fi
+
+    - name: Upload Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: basilisk-report
+        path: ./basilisk-reports/
+        if-no-files-found: warn
+
+    - name: Upload SARIF to GitHub Security
+      if: inputs.output == 'sarif' && inputs.posture-only != 'true'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ./basilisk-reports/
+      continue-on-error: true

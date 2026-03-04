@@ -20,6 +20,7 @@ from rich.text import Text
 from basilisk.core.config import BasiliskConfig
 from basilisk.core.finding import Severity
 from basilisk.core.session import ScanSession
+from basilisk.core.audit import AuditLogger
 from basilisk.providers.base import ProviderMessage
 from basilisk.providers.litellm_adapter import LiteLLMAdapter
 from basilisk.providers.custom_http import CustomHTTPAdapter
@@ -60,6 +61,13 @@ async def run_scan(
         no_dashboard=no_dashboard, fail_on=fail_on, verbose=verbose,
         debug=debug, config=config,
     )
+
+    # Initialize audit logger (on by default)
+    audit = AuditLogger(
+        output_dir=output_dir,
+        session_id=f"{target.split('/')[-1][:20]}",
+    )
+    audit.log_scan_config(cfg.to_dict())
 
     # Validate
     errors = cfg.validate()
@@ -118,8 +126,10 @@ async def run_scan(
                 module_findings = await mod.execute(prov, session, session.profile)
                 for f in module_findings:
                     console.print(f"  {f.severity.icon} [{f.severity.color}]{f.severity.value.upper()}[/{f.severity.color}] {f.title}")
+                    audit.log_finding(f.to_dict())
             except Exception as e:
                 logger.error(f"Module {mod.name} failed: {e}")
+                audit.log_error(mod.name, str(e))
             progress.advance(task)
 
     # Phase 3: Evolution (if enabled and quick mode payloads available)
@@ -132,10 +142,14 @@ async def run_scan(
     from basilisk.report.generator import generate_report
     report_path = await generate_report(session, cfg.output)
     console.print(f"  [green]✓[/green] Report saved to: {report_path}")
+    audit.log_report_generated(cfg.output.format, report_path)
 
     # Summary
     await session.close()
+    audit.close()
     _print_summary(session)
+    if audit.log_path:
+        console.print(f"  [dim]Audit log:[/dim] {audit.log_path}")
 
     return session.exit_code
 

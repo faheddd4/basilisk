@@ -5,6 +5,7 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Version-1.0.0-red?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Python-3.11+-red?style=for-the-badge&logo=python" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
   <img src="https://img.shields.io/badge/OWASP-LLM%20Top%2010-blue?style=for-the-badge" />
@@ -15,6 +16,7 @@
 <p align="center">
   <a href="#quick-start">Quick Start</a> •
   <a href="#features">Features</a> •
+  <a href="#whats-new-in-v100">What's New</a> •
   <a href="#attack-modules">Attack Modules</a> •
   <a href="#desktop-app">Desktop App</a> •
   <a href="#ci-cd-integration">CI/CD</a> •
@@ -31,7 +33,7 @@
      ██╔══██╗██╔══██║╚════██║██║██║     ██║╚════██║██╔═██╗
      ██████╔╝██║  ██║███████║██║███████╗██║███████║██║  ██╗
      ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝╚══════╝╚═╝╚══════╝╚═╝  ╚═╝
-                    AI Red Teaming Framework
+                    AI Red Teaming Framework v1.0.0
 ```
 
 **Basilisk** is a production-grade offensive security framework for red teaming AI and LLM applications. It combines comprehensive **OWASP LLM Top 10** attack coverage with a novel genetic algorithm engine — **Smart Prompt Evolution (SPE-NL)** — that evolves prompt payloads across generations to discover novel bypasses no static tool can find.
@@ -39,6 +41,80 @@
 Built by **[Regaan](https://rothackers.com)** — independent security researcher, founder of **[Rot Hackers](https://rothackers.com)**, and creator of **[WSHawk](https://wshawk.rothackers.com)** (WebSocket security scanner) and **[PoCSmith](https://github.com/noobforanonymous)** (exploit PoC generator).
 
 🌐 **Website:** [basilisk.rothackers.com](https://basilisk.rothackers.com)
+
+---
+
+## What's New in v1.0.0
+
+### 🔬 Differential Mode
+
+Compare how different LLM providers respond to the same attacks side-by-side. Detects behavioral divergences where one model refuses but another complies — exposing provider-specific weaknesses.
+
+```bash
+basilisk diff -t openai:gpt-4o -t anthropic:claude-3-5-sonnet-20241022 -t google:gemini/gemini-2.0-flash
+```
+
+- 15 probes across 5 attack categories sent to all models concurrently
+- Real-time divergence detection with per-model resistance scoring
+- JSON diff report with vulnerable vs. resistant model breakdown
+
+### 🛡️ Guardrail Posture Scan
+
+Non-destructive recon-only security assessment. Produces an **A+ to F security grade** without running any active attacks. CISO-friendly and safe for production.
+
+```bash
+basilisk posture -p openai -m gpt-4o -v
+```
+
+- 8 guardrail categories probed (prompt injection, content filtering, data boundary, role manipulation, etc.)
+- Each category tested benign → moderate → adversarial
+- Strength classification: None, Weak, Moderate, Strong, Aggressive
+- Actionable recommendations for weak spots and over-filtering
+
+### 📋 Default Audit Logging
+
+Forensic-grade, tamper-evident audit trails are now **on by default** for every scan. Every prompt sent, response received, and finding discovered is logged with SHA-256 chain integrity.
+
+- JSONL format with checksummed entries
+- API keys automatically redacted
+- Disable with `BASILISK_AUDIT=0` environment variable
+- View in the desktop app's Audit tab or via `GET /api/audit/{session_id}`
+
+### ⚙️ CI/CD GitHub Action
+
+First-class GitHub Action for pipeline integration with SARIF baseline regression detection.
+
+```yaml
+- uses: noobforanonymous/basilisk@main
+  with:
+    target: 'https://api.yourapp.com/chat'
+    api-key: ${{ secrets.OPENAI_API_KEY }}
+    mode: 'quick'
+    fail-on: 'high'
+    output: 'sarif'
+    baseline: './baseline.sarif'
+```
+
+- Full scan or posture-only mode
+- Automatic SARIF upload to GitHub Security tab
+- Baseline regression detection (fails pipeline on new findings)
+- Report artifacts uploaded automatically
+
+### 🖥️ Desktop App Enhancements
+
+Three new tabs added to the Electron desktop application:
+
+- **Diff** — multi-model comparison with dynamic target input
+- **Posture** — guardrail assessment with live grade display
+- **Audit** — session audit trail viewer with integrity verification
+
+### 📂 GitHub Community Files
+
+- `CODE_OF_CONDUCT.md` — Contributor Covenant 2.1 with responsible security tooling section
+- `CONTRIBUTING.md` — development setup, PR process, coding standards, module creation guide
+- `SECURITY.md` — vulnerability disclosure policy with SLAs
+- `.github/PULL_REQUEST_TEMPLATE.md` — OWASP-mapped PR template
+
 ---
 
 ## Quick Start
@@ -47,7 +123,7 @@ Built by **[Regaan](https://rothackers.com)** — independent security researche
 # Install from PyPI
 pip install basilisk-ai
 
-# Scan an OpenAI-powered chatbot
+# Full red team scan against an OpenAI chatbot
 export OPENAI_API_KEY="sk-..."
 basilisk scan -t https://api.target.com/chat -p openai
 
@@ -62,6 +138,16 @@ basilisk scan -t https://api.target.com/chat --mode stealth
 
 # Recon only — fingerprint the target
 basilisk recon -t https://api.target.com/chat -p openai
+
+# Guardrail posture check (no attacks)
+basilisk posture -p openai -m gpt-4o -v
+
+# Differential scan across providers
+basilisk diff -t openai:gpt-4o -t anthropic:claude-3-5-sonnet-20241022
+
+# Use GitHub Models (FREE — no API key purchase required!)
+export GH_MODELS_TOKEN="ghp_..."   # github.com/settings/tokens → models:read
+basilisk scan -t https://api.target.com/chat -p github -m gpt-4o
 
 # CI/CD mode — SARIF output, fail on high severity
 basilisk scan -t https://api.target.com/chat -o sarif --fail-on high
@@ -102,6 +188,27 @@ Full OWASP LLM Top 10 coverage across 8 attack categories. See [Attack Modules](
 - **Context Window Measurement** — determines token limits
 - **RAG Pipeline Detection** — identifies retrieval-augmented generation setups
 
+### 🔬 Differential Testing
+
+Compare model behavior across providers — a feature nobody else has:
+- Run identical probes against OpenAI, Anthropic, Google, Azure, Ollama simultaneously
+- Detect divergences where some models refuse but others comply
+- Per-model resistance rate scoring
+
+### 🛡️ Guardrail Posture Assessment
+
+Production-safe, recon-only security grading:
+- A+ through F posture grades
+- 8 categories with 3-tier probing (benign/moderate/adversarial)
+- Actionable recommendations
+
+### 📋 Forensic Audit Logging
+
+Tamper-evident audit trails enabled by default:
+- JSONL with SHA-256 chain integrity
+- Automatic secret redaction
+- Every prompt, response, finding, and error logged
+
 ### 📊 5 Report Formats
 
 | Format | Use Case |
@@ -116,6 +223,7 @@ Full OWASP LLM Top 10 coverage across 8 attack categories. See [Attack Modules](
 
 Via `litellm` + custom adapters:
 - **Cloud** — OpenAI, Anthropic, Google, Azure, AWS Bedrock
+- **GitHub Models** — **FREE** access to GPT-4o, o1, and more via `github.com/marketplace/models`
 - **Local** — Ollama, vLLM, llama.cpp
 - **Custom** — any HTTP REST API or WebSocket endpoint
 - **WSHawk** — pairs with WSHawk for WebSocket-based AI testing
@@ -124,6 +232,9 @@ Via `litellm` + custom adapters:
 
 Enterprise-grade desktop GUI with:
 - Real-time scan visualization via WebSocket
+- **Differential scan** tab with multi-model comparison
+- **Guardrail posture** tab with live A+-F grading
+- **Audit trail** viewer with integrity verification
 - Module browser with OWASP mapping
 - Session management with replay
 - One-click report export
@@ -168,13 +279,15 @@ Performance-critical operations compiled to native code:
 ## CLI Reference
 
 ```bash
-basilisk scan          # Full red team scan
-basilisk recon         # Fingerprint target only
-basilisk replay <id>   # Replay a saved session
-basilisk interactive   # Manual REPL with assisted attacks
-basilisk modules       # List all 29 attack modules
-basilisk sessions      # List saved scan sessions
-basilisk version       # Version and system info
+basilisk scan            # Full red team scan
+basilisk recon           # Fingerprint target only
+basilisk diff            # Differential scan across models (NEW)
+basilisk posture         # Guardrail posture assessment (NEW)
+basilisk replay <id>     # Replay a saved session
+basilisk interactive     # Manual REPL with assisted attacks
+basilisk modules         # List all 29 attack modules
+basilisk sessions        # List saved scan sessions
+basilisk version         # Version and system info
 ```
 
 See full [CLI documentation](docs/cli-reference.md).
@@ -214,7 +327,66 @@ basilisk scan -c basilisk.yaml
 
 ## CI/CD Integration
 
-### GitHub Actions
+### GitHub Actions (Recommended — Native Action)
+
+```yaml
+name: AI Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  basilisk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Basilisk AI Security Scan
+        uses: noobforanonymous/basilisk@main
+        with:
+          target: ${{ secrets.TARGET_URL }}
+          api-key: ${{ secrets.OPENAI_API_KEY }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          google-api-key: ${{ secrets.GOOGLE_API_KEY }}
+          provider: openai
+          mode: quick
+          fail-on: high
+          output: sarif
+          # Optional: detect regressions against a committed baseline
+          # baseline: ./security/baseline.sarif
+```
+
+**Using GitHub Models (FREE — no API key purchase required):**
+
+```yaml
+      - name: Basilisk AI Security Scan (Free via GitHub Models)
+        uses: noobforanonymous/basilisk@main
+        with:
+          target: ${{ secrets.TARGET_URL }}
+          provider: github
+          github-token: ${{ secrets.GH_MODELS_TOKEN }}
+          model: gpt-4o-mini    # Best for CI/CD: fast + highest free rate limit
+          mode: quick
+          fail-on: high
+          output: sarif
+```
+
+> 💡 **Tip:** You can use GitHub Models for free. Go to [github.com/marketplace/models](https://github.com/marketplace/models), create a [personal access token](https://github.com/settings/tokens) with `models:read` permission, and save it as a repository secret named `GH_MODELS_TOKEN`.
+
+**Required GitHub Secrets:**
+
+| Secret | Provider | Required |
+|--------|----------|----------|
+| `OPENAI_API_KEY` | OpenAI (GPT-4, etc.) | If using OpenAI |
+| `ANTHROPIC_API_KEY` | Anthropic (Claude) | If using Anthropic |
+| `GOOGLE_API_KEY` | Google (Gemini) | If using Google |
+| `GH_MODELS_TOKEN` | GitHub Models (GPT-4o, o1, etc.) | If using GitHub Models (**FREE**) |
+
+You only need the secret for whichever provider you're scanning against.
+
+### GitHub Actions (Manual)
 
 ```yaml
 - name: AI Security Scan
@@ -267,7 +439,7 @@ Output in `desktop/dist/` — ready for distribution.
 
 ```
 basilisk/
-├── core/          # Engine: session, config, database, findings, profiles
+├── core/          # Engine: session, config, database, findings, profiles, audit
 ├── providers/     # LLM adapters: litellm, custom HTTP, WebSocket
 ├── evolution/     # SPE-NL: genetic algorithm, operators, fitness, crossover
 ├── recon/         # Fingerprinting, guardrails, tools, context, RAG detection
@@ -283,9 +455,12 @@ basilisk/
 ├── payloads/      # 6 YAML payload databases
 ├── cli/           # Click + Rich terminal interface
 ├── report/        # HTML, JSON, SARIF, Markdown, PDF generators
+├── differential.py      # Multi-model comparison engine (NEW)
+├── posture.py           # Guardrail posture scanner (NEW)
 └── desktop_backend.py   # FastAPI sidecar for Electron app
 desktop/           # Electron desktop application
 native/            # C and Go performance extensions
+action.yml         # GitHub Action for CI/CD (NEW)
 ```
 
 ---
@@ -299,6 +474,9 @@ native/            # C and Go performance extensions
 - [Evolution Engine](docs/evolution-engine.md) — SPE-NL genetic mutation system
 - [Reporting](docs/reporting.md) — Report formats and CI/CD integration
 - [API Reference](docs/api-reference.md) — Desktop backend API endpoints
+- [Contributing](CONTRIBUTING.md) — Development setup, PR process, coding standards
+- [Security Policy](SECURITY.md) — Vulnerability disclosure and supported versions
+- [Code of Conduct](CODE_OF_CONDUCT.md) — Community guidelines
 
 ---
 

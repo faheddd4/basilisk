@@ -36,13 +36,22 @@ class LiteLLMAdapter(ProviderAdapter):
         max_retries: int = 3,
         custom_headers: dict[str, str] | None = None,
     ) -> None:
-        self._api_key = api_key
-        self._api_base = api_base
         self._provider = provider
+
+        # GitHub Models: free AI API via github.com/marketplace/models
+        if provider == "github":
+            import os
+            self._api_key = api_key or os.environ.get("GH_MODELS_TOKEN", "")
+            self._api_base = api_base or "https://models.inference.ai.azure.com"
+            self._custom_headers = custom_headers or {}
+        else:
+            self._api_key = api_key
+            self._api_base = api_base
+            self._custom_headers = custom_headers or {}
+
         self._default_model = default_model or self._infer_default_model(provider)
         self._timeout = timeout
         self._max_retries = max_retries
-        self._custom_headers = custom_headers or {}
 
     @property
     def name(self) -> str:
@@ -56,6 +65,7 @@ class LiteLLMAdapter(ProviderAdapter):
             "azure": "azure/gpt-4",
             "ollama": "ollama/llama3.1",
             "bedrock": "bedrock/anthropic.claude-3-sonnet",
+            "github": "gpt-4o-mini",
         }
         return defaults.get(provider, "gpt-4")
 

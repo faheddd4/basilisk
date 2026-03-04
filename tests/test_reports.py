@@ -198,7 +198,7 @@ class TestJSON:
         with open(path) as f:
             data = json.load(f)
 
-        assert data["basilisk_version"] == "0.1.0"
+        assert data["basilisk_version"] == "1.0.0"
         assert len(data["findings"]) == 3
         assert data["session"]["total_findings"] == 3
 

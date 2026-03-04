@@ -22,6 +22,8 @@
     --amber-dim: rgba(251, 191, 36, 0.08);
     --orange: #fb923c;
     --cyan: #22d3ee;
+    --danger: #f87171;
+    --safe: #34d399;
     --font: 'Inter', -apple-system, system-ui, sans-serif;
     --mono: 'JetBrains Mono', 'Fira Code', monospace;
     --radius: 8px;
@@ -1080,4 +1082,18 @@ body {
 
 .text-muted {
     color: var(--text-3);
+}
+
+/* Differential scan */
+.diff-target-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.diff-target-row .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-width: unset;
 }

@@ -97,8 +97,8 @@ def generate_sarif(session: ScanSession, path: Path) -> None:
             "tool": {
                 "driver": {
                     "name": "Basilisk",
-                    "version": "0.1.0",
-                    "semanticVersion": "0.1.0",
+                    "version": "1.0.0",
+                    "semanticVersion": "1.0.0",
                     "informationUri": "https://basilisk.rothackers.com",
                     "organization": "Rot Hackers",
                     "rules": rules,
