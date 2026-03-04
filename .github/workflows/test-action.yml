@@ -2,11 +2,11 @@ name: Test Basilisk Action
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'basilisk/**'
-      - 'action.yml'
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'basilisk/**'
+  #     - 'action.yml'
 
 jobs:
   test-scan:

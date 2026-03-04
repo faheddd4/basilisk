@@ -11,6 +11,35 @@ app.commandLine.appendSwitch('disable-software-rasterizer');
 let mainWindow;
 let pythonProcess;
 
+/**
+ * Forcefully kill any process using the specified port (zombie cleaning)
+ */
+function cleanupPort(port) {
+    try {
+        console.log(`[*] Checking for zombie processes on port ${port}...`);
+        if (process.platform === 'win32') {
+            const output = execSync(`netstat -ano | findstr :${port}`).toString();
+            const lines = output.split('\n');
+            for (const line of lines) {
+                const parts = line.trim().split(/\s+/);
+                if (parts.length > 4 && parts[1].endsWith(`:${port}`)) {
+                    const pid = parts[parts.length - 1];
+                    if (pid && pid !== '0') {
+                        console.log(`[*] Killing zombie process ${pid} on port ${port}`);
+                        execSync(`taskkill /F /PID ${pid} /T`);
+                    }
+                }
+            }
+        } else {
+            try {
+                execSync(`lsof -t -i:${port} | xargs kill -9`);
+            } catch (e) { /* port already free */ }
+        }
+    } catch (e) {
+        // netstat/lsof might fail if no process found, which is fine
+    }
+}
+
 function createWindow() {
     // Remove the native menu bar completely
     Menu.setApplicationMenu(null);
@@ -138,7 +167,26 @@ function startBackend() {
     });
 }
 
+function killBackend() {
+    if (pythonProcess) {
+        console.log('[*] Terminating backend process...');
+        try {
+            if (process.platform === 'win32') {
+                // Taskkill /T kills the process tree, catching any rogue python children
+                execSync(`taskkill /F /PID ${pythonProcess.pid} /T`);
+            } else {
+                pythonProcess.kill('SIGKILL');
+            }
+        } catch (e) {
+            console.error(`[!] Error killing backend: ${e.message}`);
+        }
+        pythonProcess = null;
+    }
+}
+
 app.whenReady().then(() => {
+    const bridgePort = process.env.BASILISK_PORT || '8741';
+    cleanupPort(bridgePort);
     startBackend();
     createWindow();
 
@@ -199,6 +247,10 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-    if (pythonProcess) pythonProcess.kill();
+    killBackend();
     if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+    killBackend();
 });
