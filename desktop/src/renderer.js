@@ -49,6 +49,26 @@ function log(type, msg) {
         el.appendChild(d);
         el.scrollTop = el.scrollHeight;
     });
+    // For critical visual feedback, also toast
+    if (type === 'err') toast('error', msg);
+}
+
+function toast(type, msg) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const iconMap = { error: '✕', ok: '✓', inf: 'ℹ' };
+    const icon = iconMap[type] || '•';
+    t.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-msg">${esc(msg)}</div>
+    `;
+    container.appendChild(t);
+    setTimeout(() => {
+        t.classList.add('removing');
+        setTimeout(() => t.remove(), 200);
+    }, 4000);
 }
 
 async function apiFetch(path, opts = {}) {
@@ -60,9 +80,18 @@ async function apiFetch(path, opts = {}) {
         if (authToken) headers['X-Basilisk-Token'] = authToken;
 
         const r = await fetch(`${BRIDGE}${path}`, { headers, ...opts });
-        return await r.json();
+        const data = await r.json();
+        if (!r.ok || data.error) {
+            const err = data.error || `HTTP ${r.status}`;
+            toast('error', err);
+            return data;
+        }
+        return data;
     } catch (e) {
-        if (backendReady) log('err', `API: ${e.message}`);
+        if (backendReady) {
+            log('err', `API: ${e.message}`);
+            toast('error', `Connection failed: ${e.message}`);
+        }
         return { error: e.message };
     }
 }
@@ -81,6 +110,7 @@ async function checkBackend(silent = false) {
             connLabel.innerText = 'Connected';
             if (!backendReady) {
                 log('ok', 'Backend connected.');
+                toast('ok', 'Basilisk engine connected.');
                 backendReady = true;
             }
             return true;
@@ -253,6 +283,7 @@ btnStart.addEventListener('click', async () => {
     if (res.session_id) {
         currentSession = res.session_id;
         log('ok', `Session: ${currentSession}`);
+        toast('ok', `Scan started successfully! (Session: ${currentSession.slice(0, 8)})`);
         pollScan();
     } else {
         log('err', `Scan failed: ${res.error || 'Unknown'}`);
@@ -264,6 +295,7 @@ btnStop.addEventListener('click', async () => {
     if (currentSession) {
         await apiFetch(`/api/scan/${currentSession}/stop`, { method: 'POST' });
         log('inf', 'Scan stopped.');
+        toast('inf', 'Scan stopped by user.');
         resetScan();
     }
 });
@@ -509,8 +541,11 @@ async function loadNative() {
 window.saveKey = async function (prov) {
     const inp = document.getElementById(`key-${prov}`);
     if (!inp) return;
-    await apiFetch('/api/settings/apikey', { method: 'POST', body: JSON.stringify({ provider: prov, key: inp.value }) });
-    log('ok', `Key saved: ${prov}`);
+    const res = await apiFetch('/api/settings/apikey', { method: 'POST', body: JSON.stringify({ provider: prov, key: inp.value }) });
+    if (!res.error) {
+        log('ok', `Key saved: ${prov}`);
+        toast('ok', `${prov.toUpperCase()} API key saved.`);
+    }
 };
 
 // ── Reports ──
@@ -521,10 +556,16 @@ document.getElementById('btn-gen-report')?.addEventListener('click', async () =>
     log('inf', `Generating ${fmt} report…`);
     if (window.basilisk?.report) {
         const r = await window.basilisk.report.export(sid, fmt);
-        if (r.path) log('ok', `Exported: ${r.path}`);
+        if (r.path) {
+            log('ok', `Exported: ${r.path}`);
+            toast('ok', `Report exported to ${r.path}`);
+        }
     } else {
-        const r = await apiFetch(`/api/report/${sid}`, { method: 'POST', body: JSON.stringify({ format: fmt }) });
-        if (r.path) log('ok', `Generated: ${r.path}`);
+        const r = await apiFetch(`/api/report/${sid}`, { method: 'POST', body: JSON.stringify({ format: fmt, open_browser: true }) });
+        if (r.path) {
+            log('ok', `Generated: ${r.path}`);
+            toast('ok', `Report generated and opening in browser...`);
+        }
     }
 });
 

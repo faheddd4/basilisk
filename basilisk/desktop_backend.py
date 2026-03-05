@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import sys
+import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -67,7 +68,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Basilisk Desktop Backend",
-    version="1.0.3",
+    version="1.0.4",
     docs_url="/docs" if os.environ.get("BASILISK_DEBUG") else None,
     lifespan=lifespan,
 )
@@ -100,6 +101,7 @@ class ScanConfig(BaseModel):
 class ReportRequest(BaseModel):
     format: str = "html"
     path: str = ""
+    open_browser: bool = False
 
 
 # ============================================================
@@ -108,7 +110,7 @@ class ReportRequest(BaseModel):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "1.0.3", "timestamp": datetime.now(timezone.utc).isoformat()}
+    return {"status": "ok", "version": "1.0.4", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
 @app.get("/api/native/status", dependencies=[Depends(verify_token)])
@@ -277,6 +279,14 @@ async def generate_report(session_id: str, req: ReportRequest):
         from basilisk.core.config import OutputConfig
         output_cfg = OutputConfig(format=req.format, output_dir="./basilisk-reports")
         path = await gen(session, output_cfg)
+        
+        # Open in browser if requested
+        if req.open_browser:
+            abs_path = os.path.abspath(path)
+            # On some Linux envs, file:// prefix helps reliability
+            file_url = f"file://{abs_path}" if sys.platform != "win32" else abs_path
+            webbrowser.open(file_url)
+            
         return {"path": path, "format": req.format}
     except HTTPException:
         raise

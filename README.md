@@ -3,13 +3,54 @@
 > **Basilisk** is an open-source AI red teaming and LLM security testing framework. It automates adversarial prompt testing against ChatGPT, Claude, Gemini, and any LLM API using genetic prompt evolution. Built for security researchers, penetration testers, and AI safety engineers who need to find vulnerabilities in AI systems before attackers do.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.0.3-red?style=for-the-badge" alt="Basilisk version 1.0.3" />
-  <img src="https://img.shields.io/badge/Python-3.11+-red?style=for-the-badge&logo=python" alt="Python 3.11+ required" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License open source" />
-  <img src="https://img.shields.io/badge/OWASP-LLM%20Top%2010-blue?style=for-the-badge" alt="OWASP LLM Top 10 coverage" />
-  <img src="https://img.shields.io/badge/Modules-29-purple?style=for-the-badge" alt="29 attack modules" />
-  <img src="https://img.shields.io/badge/Desktop-Electron-cyan?style=for-the-badge&logo=electron" alt="Electron desktop app" />
+  <img src="https://img.shields.io/badge/Version-1.0.4-red?style=for-the-badge" alt="Basilisk version 1.0.4" />
+  <img src="https://img.shields.io/badge/Status-BETA-orange?style=for-the-badge" alt="Project Status: Beta" />
+  <img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=for-the-badge" alt="License: AGPL-3.0" />
 </p>
+
+<p align="center">
+  <b>Basilisk</b> is an industrial-strength, open-source AI red teaming framework designed to stress-test LLM security filters through advanced genetic prompt evolution. It automates the discovery of jailbreaks, data exfiltration vulnerabilities, and logic bypasses with forensic precision.
+</p>
+
+---
+
+<div align="center">
+  <img src="assets/demo.gif" alt="Basilisk AI Red Teaming Demo - Genetic Prompt Evolution Dashboard" style="border-radius: 12px; margin: 20px 0; max-width: 100%; border: 1px solid #1f1f27;" />
+  <p><i>Basilisk v1.0.4 — Automated LLM Jailbreaking & Security Testing</i></p>
+  <a href="https://youtu.be/sgFcM1y_omY">
+    <img src="https://img.shields.io/badge/Watch-Full%20Demo%20on%20YouTube-red?style=for-the-badge&logo=youtube" alt="Basilisk YouTube Demo" />
+  </a>
+</div>
+
+### Key Features Shown in Demo
+
+*   **Genetic Prompt Evolution**: Automated mutation engine for high-success jailbreaks.
+*   **Differential Mode**: Side-by-side behavioral comparison across providers.
+*   **Guardrail Posture Scan**: Non-destructive A+ to F security grading.
+*   **Visual Feedback Engine**: Real-time toast notifications and interactive logs.
+*   **Forensic Audit Reports**: Export findings in HTML, JSON, and SARIF formats.
+
+## 🚀 Zero-Setup Live Demo
+
+Want to see Basilisk in action right now without configuring API keys? We maintain an **intentionally vulnerable** LLM target for security testing:
+
+**Target URL:** `https://basilisk-vulnbot.onrender.com/v1/chat/completions`
+
+Run a quick scan against it immediately:
+```bash
+# No API keys required for this target!
+basilisk scan -t https://basilisk-vulnbot.onrender.com/v1/chat/completions -p custom --model vulnbot-1.0 --mode quick
+```
+
+Or use the **Desktop App**:
+1. Open the **New Scan** tab.
+2. Set **Endpoint URL** to `https://basilisk-vulnbot.onrender.com/v1/chat/completions`.
+3. Set **Provider** to `Custom HTTP`.
+4. Set **Model** to `vulnbot-1.0`.
+5. Click **Start Scan**.
+
+Watch as Basilisk's genetic engine discovers 30+ vulnerabilities in real-time, including prompt injections, system leakage, and tool abuse.
+
 
 <p align="center">
   <a href="https://github.com/noobforanonymous/basilisk/actions/workflows/build.yml"><img src="https://github.com/noobforanonymous/basilisk/actions/workflows/build.yml/badge.svg" alt="Build Desktop" /></a>
@@ -23,7 +64,7 @@
   <a href="#what-is-basilisk">What is Basilisk?</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#features">Features</a> •
-  <a href="#whats-new-in-v103">What's New</a> •
+  <a href="#whats-new-in-v104">What's New</a> •
   <a href="#attack-modules">Attack Modules</a> •
   <a href="#desktop-app">Desktop App</a> •
   <a href="#ci-cd-integration">CI/CD</a> •
@@ -40,7 +81,7 @@
      ██╔══██╗██╔══██║╚════██║██║██║     ██║╚════██║██╔═██╗
      ██████╔╝██║  ██║███████║██║███████╗██║███████║██║  ██╗
      ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝╚══════╝╚═╝╚══════╝╚═╝  ╚═╝
-                    AI Red Teaming Framework v1.0.3
+                    AI Red Teaming Framework v1.0.4
 ```
 
 ## What is Basilisk?
@@ -99,6 +140,7 @@ basilisk scan -t https://api.target.com/chat -p github -m gpt-4o
 # CI/CD mode — SARIF output, fail on high severity
 basilisk scan -t https://api.target.com/chat -o sarif --fail-on high
 ```
+
 
 ### Docker
 
@@ -196,22 +238,16 @@ Performance-critical operations compiled to native code:
 
 ---
 
-## What's New in v1.0.3
+## What's New in v1.0.4
 
-### 🔬 Differential Mode
+### 🔔 Visual Feedback Engine
+- **Toast Notifications** — Real-time non-intrusive alerts for scan status, errors, and success events.
+- **Auto-Open Reports** — Reports now automatically launch in your default system browser (Brave, Chrome, Firefox) immediately after generation.
 
+### 🔬 Differential Mode (v1.0.3)
 Compare how different LLM providers respond to the same attacks side-by-side. Detects behavioral divergences where one model refuses but another complies, exposing provider-specific weaknesses.
 
-```bash
-basilisk diff -t openai:gpt-4o -t anthropic:claude-3-5-sonnet-20241022 -t google:gemini/gemini-2.0-flash
-```
-
-- 15 probes across 5 attack categories sent to all models concurrently
-- Real-time divergence detection with per-model resistance scoring
-- JSON diff report with vulnerable vs. resistant model breakdown
-
-### 🛡️ Guardrail Posture Scan
-
+### 🛡️ Guardrail Posture Scan (v1.0.3)
 Non-destructive recon-only security assessment. Produces an **A+ to F security grade** without running any active attacks. CISO-friendly and safe for production.
 
 ```bash

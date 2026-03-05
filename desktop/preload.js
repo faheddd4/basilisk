@@ -30,7 +30,7 @@ contextBridge.exposeInMainWorld('basilisk', {
                         'Content-Type': 'application/json',
                         'X-Basilisk-Token': token
                     },
-                    body: JSON.stringify({ format }),
+                    body: JSON.stringify({ format, open_browser: true }),
                 });
                 const data = await resp.json();
                 if (data.content) {
