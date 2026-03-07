@@ -6,6 +6,7 @@
   <img src="https://img.shields.io/badge/Version-1.0.6-red?style=for-the-badge" alt="Basilisk version 1.0.6" />
   <img src="https://img.shields.io/badge/Status-BETA-orange?style=for-the-badge" alt="Project Status: Beta" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=for-the-badge" alt="License: AGPL-3.0" />
+  <img src="https://img.shields.io/badge/Adoption-110+_Active_Users-blueviolet?style=for-the-badge&logo=github" alt="Adoption: 110+ Users" />
 </p>
 
 <p align="center">
@@ -77,7 +78,7 @@ Whether you are testing **OpenAI GPT-4o**, **Anthropic Claude**, **Google Gemini
 - **CI/CD Ready**: Native GitHub Action with SARIF output for automated AI security testing in your pipeline.
 - **Desktop App**: Full Electron GUI for visual red teaming with real-time scan dashboards.
 
-Built by **[Regaan](https://rothackers.com)**, independent security researcher, founder of **[Rot Hackers](https://rothackers.com)**, and creator of **[WSHawk](https://wshawk.rothackers.com)** (WebSocket security scanner).
+Built by **[Regaan](https://regaan.rothackers.com)**, Lead Researcher at **[ROT Independent Security Research Lab](https://rothackers.com)**, and creator of **[WSHawk](https://wshawk.rothackers.com)**.
 
 🌐 **Website:** [basilisk.rothackers.com](https://basilisk.rothackers.com)
 
@@ -568,12 +569,7 @@ Yes. Basilisk ships with a native GitHub Action and SARIF report output, making 
 
 ## About the Creator
 
-**Basilisk** is built by **[Regaan](https://rothackers.com)**, an independent security researcher and the founder of **[Rot Hackers](https://rothackers.com)**. Every tool under the Rot Hackers banner is built solo, from architecture to deployment.
-
-Other projects by Regaan:
-- **[WSHawk](https://wshawk.rothackers.com)** — Enterprise-grade WebSocket security scanner and web pentest toolkit
-- **[PoCSmith](https://github.com/noobforanonymous)** — Automated exploit Proof-of-Concept generator
-- **[Rot Hackers Platform](https://rothackers.com)** — Open-source offensive security tool hub
+**Basilisk** is built by **[Regaan](https://regaan.rothackers.com)**, Lead Researcher at the **[ROT Independent Security Research Lab](https://rothackers.com)**. Every tool under the Rot Hackers banner is built to bridge the gap between academic research and production-grade offensive artifacts.
 
 > *"I build offensive security tools that actually work. No corporate bloat, no team overhead — just clean code that ships."* — Regaan
 
